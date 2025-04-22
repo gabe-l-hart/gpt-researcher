@@ -1,15 +1,15 @@
 manifestVersion: 1
-name: "gpt-researcher"
+name: "gpt-researcher-agent"
 description: The agent conducts in-depth local and web research using a language model to generate comprehensive reports with citations, aimed at delivering factual, unbiased information.
 
 framework: Custom
 license: Apache 2.0
-languages: 
+languages:
   - Python
 githubUrl: https://github.com/i-am-bee/beeai/tree/main/agents/community/gpt-researcher-agent/gpt_researcher_agent
 avgRunTimeSeconds: 2.1
 avgRunTokens: 111
-examples: 
+examples:
   command: beeai run gpt-researcher "Impact of climate change on global agriculture"
   description: Conducting Research on Climate Change
   processingSteps:
@@ -17,7 +17,7 @@ examples:
     - Generates a series of questions to form an objective opinion on the topic
     - Uses a crawler agent to gather and summarize information for each question
     - Aggregates and filters these summaries into a final comprehensive report
-ui: 
+ui:
   type: hands-off
   userGreeting: What topic do you want to research?
 fullDescription: |
