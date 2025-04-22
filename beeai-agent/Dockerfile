@@ -39,4 +39,9 @@ COPY --from=build /app /app
 COPY --from=build /opt/app-root/ /opt/app-root/
 ENV UV_OFFLINE="1"
 ENV PATH="/opt/app-root/bin:$PATH"
+
+# Add the required agent manifest yaml
+ARG MANIFEST_B64=""
+LABEL beeai.dev.agent.yaml="${MANIFEST_B64}"
+
 CMD ["uv", "run", "server"]
