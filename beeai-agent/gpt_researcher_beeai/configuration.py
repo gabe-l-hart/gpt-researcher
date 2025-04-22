@@ -8,16 +8,23 @@ class Configuration(BaseSettings):
     llm_api_base: str = "http://localhost:11434"
     llm_api_key: str = "ollama"
     llm_model: str = "ollama:granite3.3:8b"
-    llm_model_fast: str | None = "ollama:granite3.3:8b"
-    llm_model_smart: str | None = "ollama:granite3.3:8b"
-    llm_model_strategic: str | None = "ollama:granite3.3:8b"
-    embedding: str | None = "ollama:granite3.3:8b"
+    llm_model_fast: str | None = None
+    llm_model_smart: str | None = None
+    llm_model_strategic: str | None = None
+    embedding: str | None = "ollama:nomic-embed-text"
 
 
 def load_env():
     config = Configuration()
     os.environ["RETRIEVER"] = config.retriever
-    os.environ["OPENAI_BASE_URL"] = config.llm_api_base
+    if config.llm_api_base.endswith("/v1"):
+        ollama_base = config.llm_api_base.rsplit("/", 1)[0]
+        openai_base = config.llm_api_base
+    else:
+        ollama_base = config.llm_api_base
+        openai_base = config.llm_api_base.rstrip("/") + "/v1"
+    # os.environ["OPENAI_BASE_URL"] = openai_base
+    # os.environ["LLM_KWARGS"]
     os.environ["OPENAI_API_KEY"] = config.llm_api_key
     if any(
         model.startswith("ollama:")
@@ -29,8 +36,7 @@ def load_env():
             config.embedding or ""
         ]
     ):
-        os.environ["OLLAMA_BASE_URL"] = config.llm_api_base
-        os.environ["OPENAI_BASE_URL"] = config.llm_api_base.rstrip("/") + "/v1"
+        os.environ["OLLAMA_BASE_URL"] = ollama_base
 
     os.environ["FAST_LLM"] = f"{config.llm_model_fast or config.llm_model}"
     os.environ["SMART_LLM"] = f"{config.llm_model_smart or config.llm_model}"
