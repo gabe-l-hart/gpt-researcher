@@ -559,24 +559,52 @@ Assume that the current date is {datetime.now(timezone.utc).strftime('%B %d, %Y'
 class GranitePromptFamily(PromptFamily):
     """Prompts for IBM's granite models"""
 
-
-    def _get_granite_class(self) -> type[PromptFamily]:
-        """Get the right granite prompt family based on the version number"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         if "3.3" in self.cfg.smart_llm:
-            return Granite33PromptFamily
-        if "3" in self.cfg.smart_llm:
-            return Granite3PromptFamily
-        # If not a known version, return the default
-        return PromptFamily
+            self._granite_class = Granite33PromptFamily
+        elif "3" in self.cfg.smart_llm:
+            self._granite_class = Granite3PromptFamily
+        else:
+            # If not a known version, return the default
+            self._granite_class = PromptFamily
 
     def pretty_print_docs(self, *args, **kwargs) -> str:
-        return self._get_granite_class().pretty_print_docs(*args, **kwargs)
+        return self._granite_class.pretty_print_docs(*args, **kwargs)
 
     def join_local_web_documents(self, *args, **kwargs) -> str:
-        return self._get_granite_class().join_local_web_documents(*args, **kwargs)
+        return self._granite_class.join_local_web_documents(*args, **kwargs)
+
+    def get_system_prompt(self, *args, **kwargs) -> str:
+        return self._granite_class.get_system_prompt(*args, **kwargs)
 
 
-class Granite3PromptFamily(PromptFamily):
+class _Granite3PromptFamilyBase(PromptFamily):
+    """Shared functionality for Granite model prompting"""
+
+    _BASE_SYSTEM_PROMPT = """Knowledge Cutoff Date: April 2024.
+Today's Date: {today}. You are Granite, developed by IBM."""
+    _DOCUMENTS_SYSTEM_PROMPT = """Write the response to the user's \
+input by strictly aligning with the facts in the provided documents. If the information \
+needed to answer the question is not available in the documents, inform the user that the \
+question cannot be answered based on the available data.
+"""
+
+    @classmethod
+    def get_system_prompt(cls, agent_role_prompt: str | None, content: str) -> str:
+        """Add the system prompt for documents if needed"""
+        system_prompt = cls._BASE_SYSTEM_PROMPT.format(today=datetime.now().strftime("%B %d, %Y"))
+        if cls._has_documents(content):
+            system_prompt = " ".join([system_prompt, cls._DOCUMENTS_SYSTEM_PROMPT])
+        if agent_role_prompt:
+            system_prompt = "\n".join([system_prompt, agent_role_prompt])
+        return system_prompt
+
+    @classmethod
+    def _has_documents(cls, content: str) -> bool:
+        raise NotImplementedError("Don't use the base class")
+
+class Granite3PromptFamily(_Granite3PromptFamilyBase):
     """Prompts for IBM's granite 3.X models (before 3.3)"""
 
     _DOCUMENTS_PREFIX = "<|start_of_role|>documents<|end_of_role|>\n"
@@ -605,12 +633,21 @@ class Granite3PromptFamily(PromptFamily):
         all_documents = "\n\n".join([docs_context, web_context])
         return "".join([cls._DOCUMENTS_PREFIX, all_documents, cls._DOCUMENTS_SUFFIX])
 
+    @classmethod
+    def _has_documents(cls, content: str) -> bool:
+        return cls._DOCUMENTS_PREFIX in content
 
-class Granite33PromptFamily(PromptFamily):
+class Granite33PromptFamily(_Granite3PromptFamilyBase):
     """Prompts for IBM's granite 3.3 models"""
 
     _DOCUMENT_TEMPLATE = """<|start_of_role|>document {{"document_id": "{document_id}"}}<|end_of_role|>
 {document_content}<|end_of_text|>
+"""
+    _DOCUMENTS_SYSTEM_PROMPT = """Knowledge Cutoff Date: April 2024.
+Today's Date: {today}. You are Granite, developed by IBM. Write the response to the user's \
+input by strictly aligning with the facts in the provided documents. If the information \
+needed to answer the question is not available in the documents, inform the user that the \
+question cannot be answered based on the available data.
 """
 
     @staticmethod
@@ -635,6 +672,10 @@ class Granite33PromptFamily(PromptFamily):
     def join_local_web_documents(cls, docs_context: str | list, web_context: str | list) -> str:
         """Joins local web documents using Granite's preferred format"""
         return "\n\n".join([docs_context, web_context])
+
+    @classmethod
+    def _has_documents(cls, content: str) -> bool:
+        return cls._DOCUMENT_TEMPLATE.split("{")[0] in content
 
 ## Factory ######################################################################
 
