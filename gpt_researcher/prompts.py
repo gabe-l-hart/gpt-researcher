@@ -363,6 +363,11 @@ response:
         """Joins local web documents with context scraped from the internet"""
         return f"Context from local documents: {docs_context}\n\nContext from web sources: {web_context}"
 
+    @staticmethod
+    def get_system_prompt(agent_role_prompt: str | None, content: str) -> str:
+        """Get the system prompt to use based on the given prompt"""
+        return agent_role_prompt or ""
+
     ################################################################################################
 
     # DETAILED REPORT PROMPTS

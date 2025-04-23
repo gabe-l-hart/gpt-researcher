@@ -90,6 +90,10 @@ class GPTResearcher:
         self.log_handler = log_handler
         self.prompt_family = get_prompt_family(prompt_family or self.cfg.prompt_family, self.cfg)
 
+        print("--------------------")
+        print(f"PROMPT FAMILY: {self.prompt_family}")
+        print("--------------------")
+
         # Initialize components
         self.research_conductor: ResearchConductor = ResearchConductor(self)
         self.report_generator: ReportGenerator = ReportGenerator(self)

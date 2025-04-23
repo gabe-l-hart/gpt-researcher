@@ -244,13 +244,19 @@ async def generate_report(
         content = f"{custom_prompt}\n\nContext: {context}"
     else:
         content = f"{generate_prompt(query, context, report_source, report_format=cfg.report_format, tone=tone, total_words=cfg.total_words, language=cfg.language)}"
+
+    system_prompt = prompt_family.get_system_prompt(agent_role_prompt, content)
     try:
+        messages = [
+            {"role": "user", "content": content},
+        ]
+        if system_prompt:
+            messages = [
+                {"role": "system", "content": f"{system_prompt}"}
+            ] + messages
         report = await create_chat_completion(
             model=cfg.smart_llm_model,
-            messages=[
-                {"role": "system", "content": f"{agent_role_prompt}"},
-                {"role": "user", "content": content},
-            ],
+            messages=messages,
             temperature=0.35,
             llm_provider=cfg.smart_llm_provider,
             stream=True,
@@ -264,7 +270,7 @@ async def generate_report(
             report = await create_chat_completion(
                 model=cfg.smart_llm_model,
                 messages=[
-                    {"role": "user", "content": f"{agent_role_prompt}\n\n{content}"},
+                    {"role": "user", "content": f"{system_prompt}\n\n{content}"},
                 ],
                 temperature=0.35,
                 llm_provider=cfg.smart_llm_provider,
