@@ -1,4 +1,5 @@
 from typing import Any
+import logging
 
 from beeai_sdk.providers.agent import Context, Server
 from beeai_sdk.schemas.base import Log
@@ -36,11 +37,23 @@ async def run_agent(input: TextInput, ctx: Context) -> TextOutput:
                         TextOutput(text=data.get("output", ""))
                     )
 
+    # Input may attach 'documents' as an extra field
+    documents = getattr(input, "documents", None)
     researcher = GPTResearcher(
-        query=input.text, report_type="research_report", websocket=CustomLogsHandler()
+        query=input.text,
+        report_type="research_report",
+        report_source="hybrid" if documents else "web",
+        documents=documents,
+        websocket=CustomLogsHandler(),
     )
+    # Don't search on disk for documents
+    researcher.cfg.doc_path = None
     # Conduct research on the given query
-    await researcher.conduct_research()
-    # Write the report
-    await researcher.write_report()
-    return output
+    try:
+        await researcher.conduct_research()
+        # Write the report
+        await researcher.write_report()
+        return output
+    except Exception as err:
+        logging.error("Caught an excption during research!", exc_info=True)
+        return ""
