@@ -293,8 +293,10 @@ class ResearchConductor:
             self.logger.error(f"Error during web search: {e}", exc_info=True)
             return []
 
-    async def _process_sub_query(self, sub_query: str, scraped_data: list = [], query_domains: list = []):
+    async def _process_sub_query(self, sub_query: str, scraped_data: list | None = None, query_domains: list | None = None):
         """Takes in a sub query and scrapes urls based on it and gathers context."""
+        scraped_data = scraped_data or []
+        query_domains = query_domains or []
         if self.json_handler:
             self.json_handler.log_event("sub_query", {
                 "query": sub_query,
