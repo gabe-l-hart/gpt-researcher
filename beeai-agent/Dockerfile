@@ -26,7 +26,7 @@ RUN uv pip install langchain_ollama
 # Add the actual code and re-sync the venv with uv
 COPY gpt_researcher gpt-researcher/gpt_researcher
 COPY beeai-agent/gpt_researcher_beeai gpt_researcher_beeai
-RUN uv sync
+RUN uv sync --no-cache --locked --link-mode copy
 
 # Open up permissions for things that will be copied to release
 RUN chmod ugo+r -R /app
@@ -41,8 +41,9 @@ COPY --from=build /opt/app-root/ /opt/app-root/
 ENV UV_OFFLINE="1"
 ENV PATH="/opt/app-root/bin:$PATH"
 
-# Add the required agent manifest yaml
-ARG MANIFEST_B64=""
-LABEL beeai.dev.agent.yaml="${MANIFEST_B64}"
+# Add the necessary env for beeai
+ARG RELEASE_VERSION="main"
+ENV PRODUCTION_MODE=True \
+    RELEASE_VERSION=${RELEASE_VERSION}
 
-CMD ["uv", "run", "server"]
+CMD ["uv", "run", "--no-sync", "server"]

@@ -1,12 +1,12 @@
 [project]
-name = "gpt-researcher-beeai"
+name = "granite-researcher"
 version = "0.1.0"
 description = ""
 authors = [{ name = "IBM Corp." }]
 readme = "README.md"
 requires-python = ">=3.11,<4.0"
 dependencies = [
-    "beeai-sdk==0.0.21",
+    "acp-sdk==0.8.4",
     "duckduckgo-search>=7.3.2,<8.0.0",
     "pydantic-settings>=2.7.1",
     "pydantic>=2.10.6",
@@ -14,4 +14,4 @@ dependencies = [
 ]
 
 [project.scripts]
-server = "gpt_researcher_beeai.agent:server"
+server = "granite_researcher.agent:run"
