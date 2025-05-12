@@ -100,7 +100,7 @@ async def granite_researcher(input: list[Message], context: Context) -> None:
     # TODO: Figure out how to get the embedding chunking to match Granite's 512
     #   context size limit
     # embedding_model = os.getenv("EMBEDDING_MODEL", "ollama:granite-embedding:278m")
-    embedding_model = os.getenv("EMBEDDING_MODEL", "ollama:nomic-text-embed")
+    embedding_model = os.getenv("EMBEDDING_MODEL", "ollama:nomic-embed-text")
     if embedding_model:
         os.environ["EMBEDDING"] = embedding_model
 
@@ -114,9 +114,9 @@ async def granite_researcher(input: list[Message], context: Context) -> None:
         model.startswith("ollama:")
         for model in [
             os.environ["LLM_MODEL"],
-            os.environ["LLM_MODEL_FAST"],
-            os.environ["LLM_MODEL_SMART"],
-            os.environ["LLM_MODEL_STRATEGIC"],
+            os.environ["FAST_LLM"],
+            os.environ["SMART_LLM"],
+            os.environ["STRATEGIC_LLM"],
             os.getenv("EMBEDDING", ""),
         ]
     ):
