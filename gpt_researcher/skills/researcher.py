@@ -105,7 +105,18 @@ class ResearchConductor:
 
         elif self.researcher.report_source == ReportSource.Local.value:
             self.logger.info("Using local search")
-            document_data = await DocumentLoader(self.researcher.cfg.doc_path, **doc_loader_kwargs).load()
+            document_data = []
+            if self.researcher.documents:
+                langchain_docs = []
+                for doc in (self.researcher.documents or []):
+                    if isinstance(doc, Document):
+                        langchain_docs.append(doc)
+                    elif isinstance(doc, dict):
+                        langchain_docs.append(Document(**doc))
+                    elif isinstance(doc, str) and not os.path.exists(doc):
+                        langchain_docs.append(Document(page_content=doc))
+                document_data += await LangChainDocumentLoader(document_data).load()
+            document_data += await DocumentLoader(self.researcher.cfg.doc_path, **doc_loader_kwargs).load()
             self.logger.info(f"Loaded {len(document_data)} documents")
             if self.researcher.vector_store:
                 self.researcher.vector_store.load(document_data)
