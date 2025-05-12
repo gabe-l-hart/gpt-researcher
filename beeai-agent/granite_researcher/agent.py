@@ -1,13 +1,17 @@
+# Standard
+import json
 import os
 from textwrap import dedent
 from typing import Any
 
+# Third Party
 from acp_sdk import AnyUrl, Link, LinkType, Message, MessagePart, Metadata
+from acp_sdk.server import Context, Server
 
+# Local
 from gpt_researcher import GPTResearcher
 from gpt_researcher.utils.enum import PromptFamily, ReportSource, ReportType, Tone
 
-from acp_sdk.server import Context, Server
 
 server = Server()
 
@@ -88,6 +92,7 @@ async def granite_researcher(input: list[Message], context: Context) -> None:
     The agent conducts in-depth local and web research using a language model to generate comprehensive reports with
     citations, aimed at delivering factual, unbiased information.
     """
+
     os.environ["RETRIEVER"] = "duckduckgo"
     llm_base = os.getenv("LLM_API_BASE", "http://localhost:11434/v1")
     os.environ["OPENAI_API_KEY"] = os.getenv("LLM_API_KEY", "dummy")
@@ -96,6 +101,7 @@ async def granite_researcher(input: list[Message], context: Context) -> None:
     os.environ["FAST_LLM"] = f"openai:{os.getenv('LLM_MODEL_FAST', model)}"
     os.environ["SMART_LLM"] = f"openai:{os.getenv('LLM_MODEL_SMART', model)}"
     os.environ["STRATEGIC_LLM"] = f"openai:{os.getenv('LLM_MODEL_STRATEGIC', model)}"
+    os.environ["CONVERT_WITH_DOCLING"] = "True"
 
     # TODO: Figure out how to get the embedding chunking to match Granite's 512
     #   context size limit
@@ -125,7 +131,7 @@ async def granite_researcher(input: list[Message], context: Context) -> None:
 
     # Customizations for the report type/tone/model
     report_type = os.getenv("REPORT_TYPE", ReportType.ResearchReport.value)
-    tone = os.getenv("TONE", Tone.Objective.value)
+    tone = os.getenv("TONE")
     prompt_family = PromptFamily.Granite.value if "granite" in model else None
 
     # Determine the input sources
@@ -140,11 +146,16 @@ async def granite_researcher(input: list[Message], context: Context) -> None:
     try:
         ReportType(report_type)
     except ValueError as err:
-        raise ValueError(f"Error: Invalid REPORT_TYPE {report_type}. Options: {[v.value for v in ReportType]}")
-    try:
-        Tone(tone)
-    except ValueError as err:
-        raise ValueError(f"Error: Invalid TONE {tone}. Options: {[v.value for v in Tone]}")
+        raise ValueError(f"Error: Invalid REPORT_TYPE {report_type}. Options: {[v.value for v in ReportType]}") from err
+    if tone:
+        try:
+            tone = getattr(Tone, tone[0].upper() + tone[1:].lower())
+        except (ValueError, AttributeError, IndexError) as err:
+            raise ValueError(f"Error: Invalid TONE {tone}. Options: {[v.value for v in Tone]}") from err
+
+    # For debugging, set CHAT_LOG to output all prompts to a file
+    if chat_log := os.getenv("CHAT_LOG"):
+        os.environ["LLM_KWARGS"] = json.dumps({"chat_log": chat_log})
 
     class CustomLogsHandler:
         async def send_json(self, data: dict[str, Any]) -> None:
