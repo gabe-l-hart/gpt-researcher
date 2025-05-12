@@ -8,11 +8,10 @@ USER 0:0
 
 # Install dependencies for the agent wrapper
 ENV UV_LINK_MODE=copy
-COPY beeai-agent/agent.yaml .
 COPY beeai-agent/README.md .
 COPY beeai-agent/pyproject.toml .
-RUN mkdir gpt_researcher_beeai \
-    && touch gpt_researcher_beeai/__init__.py
+RUN mkdir granite_researcher \
+    && touch granite_researcher/__init__.py
 RUN uv pip install -e .
 
 # Install the local version of gpt-researcher
@@ -25,7 +24,7 @@ RUN uv pip install langchain_ollama
 
 # Add the actual code and re-sync the venv with uv
 COPY gpt_researcher gpt-researcher/gpt_researcher
-COPY beeai-agent/gpt_researcher_beeai gpt_researcher_beeai
+COPY beeai-agent/granite_researcher granite_researcher
 RUN uv sync --no-cache --locked --link-mode copy
 
 # Open up permissions for things that will be copied to release
