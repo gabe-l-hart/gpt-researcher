@@ -20,12 +20,11 @@ COPY README.md gpt-researcher/README.md
 RUN mkdir -p gpt-researcher/gpt_researcher \
     && touch gpt-researcher/gpt_researcher/__init__.py
 RUN uv pip install -e gpt-researcher
-RUN uv pip install langchain_ollama
 
 # Add the actual code and re-sync the venv with uv
 COPY gpt_researcher gpt-researcher/gpt_researcher
 COPY beeai-agent/granite_researcher granite_researcher
-RUN uv sync --no-cache --locked --link-mode copy
+RUN uv sync
 
 # Open up permissions for things that will be copied to release
 RUN chmod ugo+r -R /app
