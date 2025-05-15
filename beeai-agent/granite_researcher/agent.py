@@ -134,13 +134,25 @@ async def granite_researcher(input: list[Message], context: Context) -> None:
     tone = os.getenv("TONE")
     prompt_family = PromptFamily.Granite.value if "granite" in model else None
 
+    # Parse input messages for documents and user query
+    user_query = None
+    input_documents = []
+    for message in input:
+        for part in message.parts:
+            if getattr(part, "role", None) == "document":
+                doc = {"page_content": str(part)}
+                if title := getattr(part, "title", None):
+                    doc["metadata"] = {"title": title}
+                input_documents.append(doc)
+            else:
+                user_query = str(part)
+
     # Determine the input sources
     hybrid = os.getenv("HYBRID", "").lower() == "true"
     doc_path = os.getenv("DOC_PATH")
     report_source = ReportSource.Web.value
-    if doc_path:
+    if doc_path or input_documents:
         report_source = ReportSource.Local.value if not hybrid else ReportSource.Hybrid.value
-    input_documents = getattr(input, "documents", None)
 
     # Validate configs against enums
     try:
@@ -168,7 +180,7 @@ async def granite_researcher(input: list[Message], context: Context) -> None:
                     await context.yield_async(MessagePart(content=data["output"]))
 
     researcher = GPTResearcher(
-        query=str(input[-1]),
+        query=str(user_query),
         report_type=report_type,
         tone=tone,
         prompt_family=prompt_family,
