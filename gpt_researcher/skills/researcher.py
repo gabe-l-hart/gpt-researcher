@@ -115,8 +115,12 @@ class ResearchConductor:
                         langchain_docs.append(Document(**doc))
                     elif isinstance(doc, str) and not os.path.exists(doc):
                         langchain_docs.append(Document(page_content=doc))
-                document_data += await LangChainDocumentLoader(document_data).load()
-            document_data += await DocumentLoader(self.researcher.cfg.doc_path, **doc_loader_kwargs).load()
+                document_data += await LangChainDocumentLoader(langchain_docs).load()
+            try:
+                document_data += await DocumentLoader(self.researcher.cfg.doc_path, **doc_loader_kwargs).load()
+            except ValueError:
+                if not document_data:
+                    raise
             self.logger.info(f"Loaded {len(document_data)} documents")
             if self.researcher.vector_store:
                 self.researcher.vector_store.load(document_data)
